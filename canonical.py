@@ -56,11 +56,11 @@ def updateSworm(currPos, bestPos, v, fValues, dimensions, birdsNumber):
         for i in range(birdsNumber):
             updateBird(currPos, bestPos, v, fValues, i)
         bestBird = currPos[np.argmin(fValues), :]
-        bestBirdEvolution[n, :] = bestBird
+        bestBirdEvolution.append(bestBird.copy())
         n += 1
     return n-1, bestBird
 
-def printEvolution2D(evolution, n: int):
+def printEvolution2D(evolution):
     x = np.arange(-2, 2, 0.1)
 
     xy = np.array([[xi, yi] for xi in x for yi in x])
@@ -69,15 +69,15 @@ def printEvolution2D(evolution, n: int):
     Z = np.reshape(Z, newshape=(40, 40))
 
     plt.contour(X, Y, Z, levels=[x**2.5 for x in range(2, 25)], cmap="plasma")
-    plt.scatter(evolution[:n, 0], evolution[:n, 1], marker='o', color='black', alpha=0.2, linewidths=0.1)
+    plt.scatter(evolution[:, 0], evolution[:, 1], marker='o', color='black', alpha=0.2, linewidths=0.1)
     plt.show()
 
 
-bestBirdEvolution = np.zeros(shape=(10000, dims))
+bestBirdEvolution = []
 
 currentPosition, bestPosition, velocity, functionValues, bestBird = initSwarm(birdsNumber, dims)
 numberOfIterations, point = updateSworm(currentPosition, bestPosition, velocity, functionValues, dims, birdsNumber)
 
 print("point found:", point, "in", numberOfIterations, "th iteration")
 if dims == 2:
-    printEvolution2D(np.array(bestBirdEvolution), numberOfIterations)
+    printEvolution2D(np.array(bestBirdEvolution))
