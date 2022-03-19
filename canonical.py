@@ -13,6 +13,7 @@ phiSoc = 2.05
 phiSum = phiIndv + phiSoc
 suppression = 2 / (phiSum - 2 + math.sqrt(phiSum ** 2 - 4 * phiSum))
 
+wantedPoint = np.array([1, 1])
 
 def rosenbrock(x):
     return np.sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
@@ -49,9 +50,9 @@ def updateBird(currPos, bestPos, v, fValues, index: int):
 
 
 def updateSworm(currPos, bestPos, v, fValues, dimensions, birdsNumber):
-    global bestBird, bestBirdEvolution
+    global bestBird, bestBirdEvolution, wantedPoint
     n = 0
-    while not stopCondition(currPos, np.array([1, 1]), dimensions):
+    while not stopCondition(currPos, wantedPoint, dimensions):
         for i in range(birdsNumber):
             updateBird(currPos, bestPos, v, fValues, i)
         bestBird = currPos[np.argmin(fValues), :]
