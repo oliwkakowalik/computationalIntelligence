@@ -1,72 +1,82 @@
-#2) Przerobić istniejący skrypt tak aby zamiast wariantu “bare bones” realizował
-#obliczenia w oparciu o wariant kanoniczny (patrz wykład).
-
-#Uniform Distribution- rozkład równomierny np.random.uniform
-
+#cannocial PSO, working for n dimensions, with stop condition and possibility of printing result as plot for 2D
 import numpy as np
+import math
+import statistics
 import matplotlib.pyplot as plt
 
-#funkcja testowa
-def rosen(x):
-    return 100 * (x[1] - x[0] * x[0])**2 + (1 - x[0])**2
+# parameters
+birdsNumber = 16
+dims = 2
 
-#narysujmy ją w zakresie od -2 do 2
-x = np.arange(-2, 2, 0.1)
-y = np.arange(-2, 2, 0.1)
-
-n = len(x)
-
-X, Y = np.meshgrid(x, y)
-Z = rosen((X, Y))
-
-#inicjalizacja
-bx = np.random.uniform(-2, 2, 16)
-by = np.random.uniform(-2, 2, 16)
-
-#budujemy ramkę z pozycjami i wartością funkcji celu
-z = np.array([rosen((bx[i], by[i])) for i in range(0, 16)])
-b = np.array([(bx[i], by[i], z[i], 0, 0, bx[i], by[i], z[i]) for i in range(0, 16)])
-#tablica postaci:
-#bieżący wektor położenia
-#bieżący wektor prędkości (tylko x y)
-#najlepszy wektor położenia
-
-#ustalamy położenie najlepszego rozwiązania
-bestBird = b[np.argmin(b[:, 2]), 0:3]
-
-#budujemy pustą ramkę na zapisanie evolucji rozwiązania
-bestEvo = np.zeros((300, 3))
-
-#parameters
-suppression = 0.7298 #tłumienie
 phiIndv = 2.05
 phiSoc = 2.05
+phiSum = phiIndv + phiSoc
+suppression = 2 / (phiSum - 2 + math.sqrt(phiSum ** 2 - 4 * phiSum))
 
-for i in range(300):
-    for j in range(16):
-        uIndv = np.random.uniform(0, phiIndv, 1)
-        uSoc = np.random.uniform(0, phiSoc, 1)
-        diffIndv = b[j, 5:7] - b[j, 0:2]
-        diffSoc = bestBird[0:2] - b[j, 0:2]
 
-        b[j, 3:5] = suppression*(b[j, 3:5]+uIndv*diffIndv + uSoc*diffSoc)
-        b[j, 0:2] = b[j, 0:2] + b[j, 3:5]
-        b[j, 2] = rosen(b[j, 0:2])
+def rosenbrock(x):
+    return np.sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
 
-        if b[j, 2] < b[j, 7]:
-            b[j, 5:] = b[j, 0:3]
 
-    #który ptaszek jest teraz najlepszy?
-    #wybieram najlepszego ptaska z iteracjim tak ma byc?
-    #czy mam wybrac najlepszegp ptaszka ze wszytskich poprzednich
-    bestBird = b[np.argmin(b[:, 2]), 0:3]
+def initSwarm(birdsNum: int, dimensions: int):
+    currPos = np.array([np.random.uniform(-2, 2, dimensions) for i in range(birdsNum)])  # (birdsNumber, dimensions)
+    bestPos = np.copy(currPos)  # (birdsNumber, dimensions)
+    v = np.array([np.random.uniform(-1, 1, dimensions) for i in range(birdsNum)])  # (birdsNumber, dimensions)
+    fValues = np.apply_along_axis(rosenbrock, 1, currPos)  # (birdsNumber, 1)
+    bestBird = currPos[np.argmin(fValues), :]  # (1, dimensions)
 
-    #zapis ewolucji rozwiązania
-    bestEvo[i] = bestBird
+    return currPos, bestPos, v, fValues, bestBird
 
-#dorysowanie ścieżki znajdowania rozwiązania
-plt.contour(X, Y, Z, levels=[x**2.5 for x in range(2, 25)], cmap="plasma")
-plt.scatter(bestEvo[:, 0], bestEvo[:, 1], marker='o', color='black', alpha=0.2, linewidths=0.1)
-plt.show()
 
-print(bestEvo)
+def stopCondition(currPos, point: np.array, dimensions):
+    avgs = np.array([statistics.mean(currPos[:, i]) for i in range(dimensions)])
+    diff = abs(avgs - point)
+    return True if all(diff < 0.00000001) else False
+
+
+def updateBird(currPos, bestPos, v, fValues, index: int):
+    global phiIndv, phiSoc, suppression, bestBird
+
+    uIndv = np.random.uniform(0, phiIndv, 1)
+    uSoc = np.random.uniform(0, phiSoc, 1)
+    diffIndv = bestPos[index, :] - currPos[index, :]
+    diffSoc = bestBird - currPos[index, :]
+
+    v[index, :] = suppression * (v[index, :] + uIndv * diffIndv + uSoc * diffSoc)
+    currPos[index, :] += v[index, :]
+    fValues[index] = rosenbrock(currPos[index, :])
+    bestPos[index, :] = bestPos[index, :] if rosenbrock(bestPos[index, :]) < fValues[index] else currPos[index, :]
+
+
+def updateSworm(currPos, bestPos, v, fValues, dimensions, birdsNumber):
+    global bestBird, bestBirdEvolution
+    n = 0
+    while not stopCondition(currPos, np.array([1, 1]), dimensions):
+        for i in range(birdsNumber):
+            updateBird(currPos, bestPos, v, fValues, i)
+        bestBird = currPos[np.argmin(fValues), :]
+        bestBirdEvolution[n, :] = bestBird
+        n += 1
+    return n-1, bestBird
+
+def printEvolution2D(evolution, n: int):
+    x = np.arange(-2, 2, 0.1)
+
+    xy = np.array([[xi, yi] for xi in x for yi in x])
+    X, Y = np.meshgrid(x, x)
+    Z = np.apply_along_axis(rosenbrock, 1, xy)
+    Z = np.reshape(Z, newshape=(40, 40))
+
+    plt.contour(X, Y, Z, levels=[x**2.5 for x in range(2, 25)], cmap="plasma")
+    plt.scatter(evolution[:n, 0], evolution[:n, 1], marker='o', color='black', alpha=0.2, linewidths=0.1)
+    plt.show()
+
+
+bestBirdEvolution = np.zeros(shape=(10000, dims))
+
+currentPosition, bestPosition, velocity, functionValues, bestBird = initSwarm(birdsNumber, dims)
+numberOfIterations, point = updateSworm(currentPosition, bestPosition, velocity, functionValues, dims, birdsNumber)
+
+print("point found:", point, "in", numberOfIterations, "th iteration")
+if dims == 2:
+    printEvolution2D(np.array(bestBirdEvolution), numberOfIterations)
