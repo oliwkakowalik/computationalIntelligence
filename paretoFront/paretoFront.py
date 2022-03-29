@@ -50,3 +50,9 @@ for i in range(iterations):
 
 plt.scatter(y[:, 0], y[:, 1])
 plt.show()
+
+f1s = (y[:, 0] - min(y[:, 0]))/(max(y[:, 0]) - min(y[:, 0]))
+f2s = (y[:, 1] - min(y[:, 1]))/(max(y[:, 1]) - min(y[:, 1]))
+dist = [math.sqrt(f1s[i]**2+f2s[i]**2) for i in range(iterations)]
+bestBird = x[np.argmin(dist), :]
+print(bestBird)
