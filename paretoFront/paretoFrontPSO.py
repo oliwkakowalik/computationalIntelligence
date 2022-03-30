@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-iterations = 10000
+iterations = 7000
 birdsNumber = 512
 
 
@@ -63,9 +63,8 @@ for i in range(iterations):
             birds[j, 4] = testF2
 
     #który ptaszek jest teraz najlepszy?
-    dist = birds[:, 3:] - [-3.14, 0]
-    dist = np.array([math.sqrt(dist[i, 0] ** 2 + dist[i, 1] ** 2) for i in range(birdsNumber)])
-    bestBird = birds[np.argmin(dist), :]
+    bestBird1 = birds[np.argmin(birds[:, 3]), :]
+    bestBird2 = birds[np.argmin(birds[:, 4]), :]
 
 # dorysowanie ścieżki znajdowania rozwiązania
 plt.scatter(birds[:, 3], birds[:, 4])
